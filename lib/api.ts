@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { MenuItem, Order, OrderStatus } from '../../shared/types';
+import type { MenuItem, Order, OrderStatus } from '@shared/types';
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:4000/api'
@@ -17,6 +17,7 @@ export const createOrder = async (payload: {
   lines: Array<{ menuItemId: string; quantity: number; addOnIds?: string[]; specialInstructions?: string }>;
   customer: { name: string; phone: string; table?: string };
   mockPaymentIntent?: 'force-success' | 'force-fail';
+  clientPrices?: Array<{ id: string; price: number; stock: number; addOns: any[] }>;
 }) => (await api.post<Order>('/orders', payload)).data;
 
 export const fetchOrder = async (id: string) => (await api.get<Order>(`/orders/${id}`)).data;

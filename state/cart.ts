@@ -14,14 +14,16 @@ export interface CartLine {
 interface CartState {
   lines: CartLine[];
   lastSaved?: number;
+  expired?: boolean;
   add(line: CartLine): void;
   updateQuantity(id: string, quantity: number): void;
   remove(id: string): void;
   clear(): void;
+  resetExpiry(): void;
   total(): number;
 }
 
-const loadPersisted = (): { lines: CartLine[]; lastSaved?: number } => {
+const loadPersisted = (): { lines: CartLine[]; lastSaved?: number; expired?: boolean } => {
   if (typeof window === 'undefined') return { lines: [] };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -29,7 +31,7 @@ const loadPersisted = (): { lines: CartLine[]; lastSaved?: number } => {
     const parsed = JSON.parse(raw) as { lines: CartLine[]; lastSaved?: number };
     if (parsed.lastSaved && Date.now() - parsed.lastSaved > EXPIRY_MS) {
       localStorage.removeItem(STORAGE_KEY);
-      return { lines: [] };
+      return { lines: [], expired: true };
     }
     return { lines: parsed.lines ?? [], lastSaved: parsed.lastSaved };
   } catch {
@@ -43,7 +45,7 @@ const persist = (lines: CartLine[]) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 };
 
-export const useCart = create<CartState>((set, get) => ({
+const store = create<CartState>((set, get) => ({
   ...loadPersisted(),
   add: (line) =>
     set((state) => {
@@ -56,24 +58,25 @@ export const useCart = create<CartState>((set, get) => ({
           )
         : [...state.lines, line];
       persist(lines);
-      return { lines, lastSaved: Date.now() };
+      return { lines, lastSaved: Date.now(), expired: false };
     }),
   updateQuantity: (id, quantity) =>
     set((state) => {
       const lines = state.lines.map((l) => (l.menuItem.id === id ? { ...l, quantity } : l));
       persist(lines);
-      return { lines, lastSaved: Date.now() };
+      return { lines, lastSaved: Date.now(), expired: false };
     }),
   remove: (id) =>
     set((state) => {
       const lines = state.lines.filter((l) => l.menuItem.id !== id);
       persist(lines);
-      return { lines, lastSaved: Date.now() };
+      return { lines, lastSaved: Date.now(), expired: false };
     }),
   clear: () => {
     persist([]);
     set({ lines: [], lastSaved: Date.now() });
   },
+  resetExpiry: () => set((state) => ({ ...state, expired: false })),
   total: () => {
     return get().lines.reduce((acc, line) => {
       const addOnTotal =
@@ -85,3 +88,23 @@ export const useCart = create<CartState>((set, get) => ({
     }, 0);
   }
 }));
+
+// Cross-tab rehydration so cart stays in sync and expiry notice propagates
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === STORAGE_KEY && e.newValue) {
+      try {
+        const parsed = JSON.parse(e.newValue);
+        store.setState({
+          lines: parsed.lines ?? [],
+          lastSaved: parsed.lastSaved,
+          expired: false
+        });
+      } catch {
+        // ignore
+      }
+    }
+  });
+}
+
+export const useCart = store;

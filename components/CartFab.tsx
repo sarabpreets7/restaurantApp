@@ -10,9 +10,10 @@ export const CartFab: React.FC = () => {
   const [mounted, setMounted] = React.useState(false);
   const lines = useCart((s) => s.lines);
   const total = useCart((s) => s.total());
+  const expired = useCart((s) => s.expired);
 
   React.useEffect(() => setMounted(true), []);
-  if (!mounted || !lines.length) return null;
+  if (!mounted || (!lines.length && !expired)) return null;
 
   const count = lines.reduce((acc, l) => acc + l.quantity, 0);
   return (
@@ -33,7 +34,7 @@ export const CartFab: React.FC = () => {
         zIndex: 50
       }}
     >
-      View cart • {count} item{count > 1 ? 's' : ''} • {formatINR(total)}
+      {expired ? 'Cart expired — review items' : `View cart • ${count} item${count > 1 ? 's' : ''} • ${formatINR(total)}`}
     </button>
   );
 };

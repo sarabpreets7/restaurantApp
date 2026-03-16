@@ -10,6 +10,8 @@ import { formatINR } from '../../lib/money';
 const CartPageInner: React.FC = () => {
   const router = useRouter();
   const { lines, updateQuantity, remove, clear, total } = useCart();
+  const expired = useCart((s) => s.expired);
+  const resetExpiry = useCart((s) => s.resetExpiry);
   const [customer, setCustomer] = useState({ name: '', phone: '', table: '' });
   const [paymentMode, setPaymentMode] = useState<'normal' | 'force-success' | 'force-fail'>(
     'normal'
@@ -29,7 +31,14 @@ const CartPageInner: React.FC = () => {
           specialInstructions: l.specialInstructions
         })),
         customer,
-        mockPaymentIntent: paymentMode === 'normal' ? undefined : paymentMode
+        mockPaymentIntent: paymentMode === 'normal' ? undefined : paymentMode,
+        // send last known prices to allow server-side drift detection
+        clientPrices: lines.map((l) => ({
+          id: l.menuItem.id,
+          price: l.menuItem.price,
+          stock: l.menuItem.stock,
+          addOns: l.menuItem.addOns ?? []
+        }))
       });
       clear();
       router.push(`/track/${order.id}`);
@@ -40,13 +49,24 @@ const CartPageInner: React.FC = () => {
     }
   };
 
-  if (!lines.length) {
+  if (!lines.length && !expired) {
     return <div style={{ marginTop: 40 }}>Your cart is empty.</div>;
   }
 
   return (
     <div style={{ display: 'grid', gap: 16, marginTop: 16 }}>
       <h2 style={{ margin: 0 }}>Your cart</h2>
+      {expired ? (
+        <div style={{ background: '#fff3cd', color: '#6c5300', padding: 12, borderRadius: 10 }}>
+          Session expired after 60 minutes of inactivity. Please review and re-submit your order.
+          <button
+            style={{ marginLeft: 10, padding: '6px 10px', borderRadius: 8, border: 'none', fontWeight: 700 }}
+            onClick={() => resetExpiry()}
+          >
+            Dismiss
+          </button>
+        </div>
+      ) : null}
       {lines.map((line) => (
         <div
           key={line.menuItem.id}
@@ -60,7 +80,10 @@ const CartPageInner: React.FC = () => {
             </div>
             {line.addOnIds?.length ? (
               <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                Add-ons: {line.addOnIds.join(', ')}
+                Add-ons:{' '}
+                {line.addOnIds
+                  .map((id) => line.menuItem.addOns?.find((a) => a.id === id)?.label ?? id)
+                  .join(', ')}
               </div>
             ) : null}
             {line.specialInstructions ? (
