@@ -5,6 +5,7 @@ import { Providers } from '../providers';
 import { AdminOrders } from '../../components/AdminOrders';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { api } from '../../lib/api';
+import axios from 'axios';
 
 export default function AdminPage() {
   const params = useSearchParams();
@@ -53,16 +54,22 @@ export default function AdminPage() {
           style={{ width: '100%', padding: 10, marginBottom: 12 }}
         />
         <button
-          onClick={() => {
-            if (required && token !== required) {
-              setError('Invalid token');
+          onClick={async () => {
+            try {
+              const res = await axios.post(
+                `${process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:4000/api'}/auth/login`,
+                { password: token }
+              );
+              const jwt = res.data.token;
+              localStorage.setItem('adminToken', jwt);
+              api.defaults.headers.common['authorization'] = `Bearer ${jwt}`;
+              setError('');
+              router.refresh();
+            } catch (e: any) {
+              setError(e?.response?.data?.message ?? 'Invalid token');
               localStorage.removeItem('adminToken');
-              return;
+              api.defaults.headers.common['authorization'] = '';
             }
-            setError('');
-            localStorage.setItem('adminToken', token);
-            api.defaults.headers.common['x-admin-token'] = token;
-            router.refresh();
           }}
           style={{
             width: '100%',

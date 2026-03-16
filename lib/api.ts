@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { MenuItem, Order, OrderStatus } from '@shared/types';
+import type { MenuItem, Order, OrderStatus } from '../../shared/types';
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:4000/api'

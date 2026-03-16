@@ -14,7 +14,8 @@
     "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
-      "@shared/*": ["../shared/*"]
+      "@shared/*": ["../shared/*"],
+      "../../shared/*": ["../shared/*"]
     },
     "resolveJsonModule": true,
     "isolatedModules": true,

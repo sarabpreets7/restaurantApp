@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Order, fetchOrders, updateStatus } from '../lib/api';
+import { Order, fetchOrders, updateStatus, fetchMenu } from '../lib/api';
 import { connectOrderSocket } from '../lib/socket';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatINR } from '../lib/money';
@@ -15,6 +15,14 @@ const nextStatus: Record<Order['status'], Order['status'] | null> = {
 export const AdminOrders: React.FC = () => {
   const queryClient = useQueryClient();
   const { data } = useQuery({ queryKey: ['orders'], queryFn: fetchOrders, refetchOnWindowFocus: false });
+  const { data: menu } = useQuery({ queryKey: ['menu-admin'], queryFn: fetchMenu, staleTime: 5 * 60 * 1000 });
+  const addOnLabel = React.useCallback(
+    (menuItemId: string, addOnId: string) => {
+      const item = menu?.find((m) => m.id === menuItemId);
+      return item?.addOns?.find((a) => a.id === addOnId)?.label ?? addOnId;
+    },
+    [menu]
+  );
 
   useEffect(() => {
     const socket = connectOrderSocket();
@@ -56,10 +64,15 @@ export const AdminOrders: React.FC = () => {
               {order.lines.map((line) => (
                 <li key={line.menuItemId}>
                   x{line.quantity} — {line.menuItemId.slice(0, 4)} ({formatINR(line.unitPrice)})
+                  {line.addOnIds?.length ? (
+                    <span style={{ color: 'var(--muted)', marginLeft: 6 }}>
+                      + {line.addOnIds.map((id) => addOnLabel(line.menuItemId, id)).join(', ')}
+                    </span>
+                  ) : null}
                 </li>
               ))}
             </ul>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <div>{formatINR(order.total)}</div>
               {nextStatus[order.status] && (
                 <button onClick={() => advance(order)}>Mark {nextStatus[order.status]}</button>

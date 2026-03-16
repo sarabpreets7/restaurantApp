@@ -4,6 +4,39 @@ import { useCart } from '../state/cart';
 import clsx from 'clsx';
 import { formatINR } from '../lib/money';
 
+const imageMap: Record<string, string> = {
+  'Truffle Fries':
+    'https://images.unsplash.com/photo-1504544750208-dc0358e63f7f?auto=format&fit=crop&w=600&q=80',
+  'Crispy Calamari':
+    'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=600&q=80',
+  'Smoked Tofu Bowl':
+    'https://images.unsplash.com/photo-1522184216315-dc618e9fbb52?auto=format&fit=crop&w=600&q=80',
+  'Ribeye Steak':
+    'https://images.unsplash.com/photo-1553163147-622ab57be1c7?auto=format&fit=crop&w=600&q=80',
+  'Molten Chocolate Cake':
+    'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=600&q=80',
+  'Cold Brew':
+    'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=600&q=80',
+  'Burrata Plate':
+    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80',
+  'Margherita Pizza':
+    'https://images.unsplash.com/photo-1548365328-8c6db3220c8e?auto=format&fit=crop&w=600&q=80',
+  'Grilled Salmon':
+    'https://images.unsplash.com/photo-1514516345957-556ca7d90aaf?auto=format&fit=crop&w=600&q=80',
+  'Mushroom Risotto':
+    'https://images.unsplash.com/photo-1612874472278-5c1ef021b6b9?auto=format&fit=crop&w=600&q=80',
+  'Paneer Tikka Wrap':
+    'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=600&q=80',
+  'Mango Panna Cotta':
+    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80',
+  'Tiramisu Jar':
+    'https://images.unsplash.com/photo-1505253758473-96b7015fcd40?auto=format&fit=crop&w=600&q=80',
+  'Hibiscus Iced Tea':
+    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=600&q=80',
+  'Matcha Latte':
+    'https://images.unsplash.com/photo-1523359346063-d879354c0ea5?auto=format&fit=crop&w=600&q=80'
+};
+
 interface Props {
   items: MenuItem[];
 }
@@ -41,6 +74,20 @@ export const MenuGrid: React.FC<Props> = ({ items }) => {
             {item.description.slice(0, 80)}
             {item.description.length > 80 ? '…' : ''}
           </div>
+          <div
+            style={{
+              height: 120,
+              borderRadius: 12,
+              backgroundImage: `url(${
+                item.imageUrl && item.imageUrl.startsWith('http')
+                  ? item.imageUrl
+                  : imageMap[item.name] ?? '/placeholder.png'
+              }), linear-gradient(135deg, #f0f0f0, #e0e0e0)`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              marginBottom: 10
+            }}
+          />
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
             <span>{formatINR(item.price)}</span>
             <span>{item.prepMinutes} min</span>
