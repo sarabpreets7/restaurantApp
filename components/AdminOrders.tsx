@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Order, fetchOrders, updateStatus } from '../lib/api';
 import { connectOrderSocket } from '../lib/socket';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { formatINR } from '../lib/money';
 
 const nextStatus: Record<Order['status'], Order['status'] | null> = {
   received: 'preparing',
@@ -54,12 +55,12 @@ export const AdminOrders: React.FC = () => {
             <ul>
               {order.lines.map((line) => (
                 <li key={line.menuItemId}>
-                  x{line.quantity} — {line.menuItemId.slice(0, 4)} (${line.unitPrice})
+                  x{line.quantity} — {line.menuItemId.slice(0, 4)} ({formatINR(line.unitPrice)})
                 </li>
               ))}
             </ul>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <div>${order.total.toFixed(2)}</div>
+              <div>{formatINR(order.total)}</div>
               {nextStatus[order.status] && (
                 <button onClick={() => advance(order)}>Mark {nextStatus[order.status]}</button>
               )}

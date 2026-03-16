@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useCart } from '../state/cart';
 import { createOrder } from '../lib/api';
+import { formatINR } from '../lib/money';
 
 interface Props {
   onOrderCreated: (id: string) => void;
@@ -9,6 +10,9 @@ interface Props {
 export const CartDrawer: React.FC<Props> = ({ onOrderCreated }) => {
   const { lines, updateQuantity, remove, total, clear } = useCart();
   const [customer, setCustomer] = useState({ name: '', phone: '', table: '' });
+  const [paymentMode, setPaymentMode] = useState<'normal' | 'force-success' | 'force-fail'>(
+    'normal'
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -23,7 +27,8 @@ export const CartDrawer: React.FC<Props> = ({ onOrderCreated }) => {
           addOnIds: l.addOnIds,
           specialInstructions: l.specialInstructions
         })),
-        customer
+        customer,
+        mockPaymentIntent: paymentMode === 'normal' ? undefined : paymentMode
       });
       clear();
       onOrderCreated(order.id);
@@ -91,9 +96,30 @@ export const CartDrawer: React.FC<Props> = ({ onOrderCreated }) => {
           style={{ width: '100%', padding: 10 }}
         />
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', margin: '12px 0' }}>
+      <div style={{ margin: '12px 0' }}>
+        <div style={{ fontWeight: 600, marginBottom: 6 }}>Mock payment</div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {[
+            { value: 'normal', label: 'Normal (random)' },
+            { value: 'force-success', label: 'Force success' },
+            { value: 'force-fail', label: 'Force fail' }
+          ].map((opt) => (
+            <label key={opt.value} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <input
+                type="radio"
+                name="paymentMode"
+                value={opt.value}
+                checked={paymentMode === opt.value}
+                onChange={(e) => setPaymentMode(e.target.value as any)}
+              />
+              <span>{opt.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', margin: '12px 0' }}>
         <span>Total</span>
-        <strong>${total().toFixed(2)}</strong>
+        <strong>{formatINR(total())}</strong>
       </div>
       {error && <div style={{ color: '#ff6b6b', marginBottom: 8 }}>{error}</div>}
       <button

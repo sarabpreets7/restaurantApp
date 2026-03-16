@@ -6,18 +6,21 @@ import { fetchMenu } from '../lib/api';
 import { Providers } from './providers';
 import { FilterBar } from '../components/FilterBar';
 import { MenuGrid } from '../components/MenuGrid';
-import { CartDrawer } from '../components/CartDrawer';
 import { useRouter } from 'next/navigation';
+import { CartFab } from '../components/CartFab';
 
 const CustomerPage = () => {
   const router = useRouter();
-  const { data: menu } = useQuery({
-    queryKey: ['menu', { search, category, dietary }],
-    queryFn: () => fetchMenu({ search, category, dietary })
-  });
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [dietary, setDietary] = useState('');
+  const [minPrice, setMinPrice] = useState(0);
+  const [maxPrice, setMaxPrice] = useState(50);
+
+  const { data: menu } = useQuery({
+    queryKey: ['menu', { search, category, dietary, minPrice, maxPrice }],
+    queryFn: () => fetchMenu({ search, category, dietary, minPrice, maxPrice })
+  });
 
   const filtered = useMemo(() => {
     if (!menu) return [];
@@ -45,9 +48,15 @@ const CustomerPage = () => {
         onCategory={setCategory}
         dietary={dietary}
         onDietary={setDietary}
+        minPrice={minPrice}
+        maxPrice={maxPrice}
+        onPrice={(min, max) => {
+          setMinPrice(min);
+          setMaxPrice(max);
+        }}
       />
       {menu ? <MenuGrid items={filtered} /> : <div>Loading menu...</div>}
-      <CartDrawer onOrderCreated={(id) => router.push(`/track/${id}`)} />
+      <CartFab />
     </>
   );
 };

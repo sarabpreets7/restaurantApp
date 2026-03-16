@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Order, fetchOrder } from '../lib/api';
 import { connectOrderSocket } from '../lib/socket';
+import { formatINR } from '../lib/money';
 
 const steps: Order['status'][] = ['received', 'preparing', 'ready', 'completed'];
 
@@ -45,7 +46,7 @@ export const OrderTracker: React.FC<{ orderId: string }> = ({ orderId }) => {
       </div>
       <div style={{ marginTop: 16 }}>
         <div>Updated: {new Date(order.updatedAt).toLocaleTimeString()}</div>
-        <div>Total: ${order.total.toFixed(2)}</div>
+        <div>Total: {formatINR(order.total)}</div>
       </div>
     </div>
   );
