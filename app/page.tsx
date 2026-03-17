@@ -67,7 +67,11 @@ const CustomerPage = () => {
           </button>
         </div>
       ) : isLoading || !menu ? (
-        <div>Loading menu...</div>
+        <div style={{ marginTop: 12 }}>Loading menu…</div>
+      ) : filtered.length === 0 ? (
+        <div style={{ marginTop: 12, color: 'var(--muted)' }}>
+          No results. Try clearing filters or widening the price range.
+        </div>
       ) : (
         <MenuGrid items={filtered} />
       )}
