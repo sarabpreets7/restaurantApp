@@ -14,8 +14,17 @@ const nextStatus: Record<Order['status'], Order['status'] | null> = {
 
 export const AdminOrders: React.FC = () => {
   const queryClient = useQueryClient();
-  const { data } = useQuery({ queryKey: ['orders'], queryFn: fetchOrders, refetchOnWindowFocus: false });
-  const { data: menu } = useQuery({ queryKey: ['menu-admin'], queryFn: fetchMenu, staleTime: 5 * 60 * 1000 });
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch: refetchOrders
+  } = useQuery({ queryKey: ['orders'], queryFn: fetchOrders, refetchOnWindowFocus: false });
+  const { data: menu } = useQuery({
+    queryKey: ['menu-admin'],
+    queryFn: fetchMenu,
+    staleTime: 5 * 60 * 1000
+  });
   const addOnLabel = React.useCallback(
     (menuItemId: string, addOnId: string) => {
       const item = menu?.find((m) => m.id === menuItemId);
@@ -45,7 +54,21 @@ export const AdminOrders: React.FC = () => {
     await queryClient.invalidateQueries({ queryKey: ['orders'] });
   };
 
-  if (!data) return <div>Loading...</div>;
+  if (isLoading) return <div className="glass" style={{ padding: 16 }}>Loading orders…</div>;
+  if (isError) return (
+    <div className="glass" style={{ padding: 16 }}>
+      Failed to load orders.
+      <button style={{ marginLeft: 8 }} onClick={() => refetchOrders()}>Retry</button>
+    </div>
+  );
+  if (!data?.length) {
+    return (
+      <div className="glass" style={{ padding: 16 }}>
+        <h2 style={{ marginTop: 0 }}>Kitchen Dashboard</h2>
+        <div style={{ color: 'var(--muted)' }}>No orders yet. They’ll appear here in real time.</div>
+      </div>
+    );
+  }
 
   return (
     <div className="glass" style={{ padding: 16 }}>

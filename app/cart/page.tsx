@@ -43,7 +43,8 @@ const CartPageInner: React.FC = () => {
       clear();
       router.push(`/track/${order.id}`);
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Failed to place order');
+      const msg = err?.response?.data?.message ?? 'Failed to place order';
+      setError(msg);
     } finally {
       setBusy(false);
     }
@@ -169,7 +170,19 @@ const CartPageInner: React.FC = () => {
           <span>Total</span>
           <span>{formatINR(total())}</span>
         </div>
-        {error && <div style={{ color: '#ff6b6b' }}>{error}</div>}
+        {error && (
+          <div style={{ color: '#ff6b6b', display: 'flex', gap: 8, alignItems: 'center' }}>
+            {error}
+            {error.toLowerCase().includes('menu changed') ? (
+              <button
+                style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)' }}
+                onClick={() => window.location.reload()}
+              >
+                Refresh menu
+              </button>
+            ) : null}
+          </div>
+        )}
         <button
           onClick={placeOrder}
           disabled={busy}

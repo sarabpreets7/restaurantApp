@@ -169,18 +169,21 @@ export const MenuGrid: React.FC<Props> = ({ items }) => {
             <div style={{ display: 'grid', gap: 8 }}>
               <div style={{ fontWeight: 600 }}>Size</div>
               <div style={{ display: 'flex', gap: 10 }}>
-                {(['Regular', 'Large'] as const).map((s) => (
-                  <label key={s} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    <input
-                      type="radio"
-                      name="size"
-                      value={s}
-                      checked={size === s}
-                      onChange={() => setSize(s)}
-                    />
-                    {s}
-                  </label>
-                ))}
+                {(['Regular', 'Large'] as const).map((s) => {
+                  const multiplier = s === 'Regular' ? 1 : 1.25;
+                  return (
+                    <label key={s} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <input
+                        type="radio"
+                        name="size"
+                        value={s}
+                        checked={size === s}
+                        onChange={() => setSize(s)}
+                      />
+                      {s} ({formatINR(selected.price * multiplier)})
+                    </label>
+                  );
+                })}
               </div>
             </div>
 
@@ -200,7 +203,7 @@ export const MenuGrid: React.FC<Props> = ({ items }) => {
                           );
                         }}
                       />
-                      {a.label} (+{formatINR(a.price)})
+                      {a.label} (+{formatINR(a.price)}) — {size === 'Large' ? 'applies to large too' : 'regular size'}
                     </label>
                   ))}
                 </div>

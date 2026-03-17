@@ -8,6 +8,7 @@ import { FilterBar } from '../components/FilterBar';
 import { MenuGrid } from '../components/MenuGrid';
 import { useRouter } from 'next/navigation';
 import { CartFab } from '../components/CartFab';
+import { useDebounce } from '../lib/useDebounce';
 
 const CustomerPage = () => {
   const router = useRouter();
@@ -17,23 +18,25 @@ const CustomerPage = () => {
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(50);
 
+  const debouncedSearch = useDebounce(search, 250);
+
   const { data: menu } = useQuery({
-    queryKey: ['menu', { search, category, dietary, minPrice, maxPrice }],
-    queryFn: () => fetchMenu({ search, category, dietary, minPrice, maxPrice })
+    queryKey: ['menu', { search: debouncedSearch, category, dietary, minPrice, maxPrice }],
+    queryFn: () => fetchMenu({ search: debouncedSearch, category, dietary, minPrice, maxPrice })
   });
 
   const filtered = useMemo(() => {
     if (!menu) return [];
     return menu.filter((m) => {
       const matchesSearch =
-        !search ||
-        m.name.toLowerCase().includes(search.toLowerCase()) ||
-        m.description.toLowerCase().includes(search.toLowerCase());
+        !debouncedSearch ||
+        m.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        m.description.toLowerCase().includes(debouncedSearch.toLowerCase());
       const matchesCategory = !category || m.category === category;
       const matchesDiet = !dietary || m.dietary.includes(dietary);
       return matchesSearch && matchesCategory && matchesDiet;
     });
-  }, [menu, search, category, dietary]);
+  }, [menu, debouncedSearch, category, dietary]);
 
   return (
     <>
