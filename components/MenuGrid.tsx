@@ -3,6 +3,7 @@ import { MenuItem } from '../lib/api';
 import { useCart } from '../state/cart';
 import clsx from 'clsx';
 import { formatINR } from '../lib/money';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 const imageMap: Record<string, string> = {
   'Truffle Fries':
@@ -47,90 +48,151 @@ export const MenuGrid: React.FC<Props> = ({ items }) => {
   const [selectedAddOns, setSelectedAddOns] = React.useState<string[]>([]);
   const [size, setSize] = React.useState<'Regular' | 'Large'>('Regular');
   const [notes, setNotes] = React.useState('');
+  const scrollParentRef = React.useRef<HTMLDivElement | null>(null);
+  const [columns, setColumns] = React.useState(1);
+
+  React.useEffect(() => {
+    const el = scrollParentRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0].contentRect.width;
+      const colCount = Math.max(1, Math.floor(width / 260));
+      setColumns(colCount);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const rowCount = Math.ceil(items.length / columns);
+  const rowVirtualizer = useVirtualizer({
+    count: rowCount || 1,
+    getScrollElement: () => scrollParentRef.current,
+    estimateSize: () => 360,
+    overscan: 5
+  });
 
   const resetSelections = () => {
     setSelectedAddOns([]);
     setSize('Regular');
     setNotes('');
   };
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-        gap: 16,
-        marginTop: 16
-      }}
-    >
-      {items.map((item) => (
-        <div key={item.id} className="glass" style={{ padding: 16 }}>
-          <div
-            style={{ fontWeight: 700, fontSize: 18, cursor: 'pointer' }}
-            onClick={() => setSelected(item)}
-          >
-            {item.name}
-          </div>
-          <div style={{ color: 'var(--muted)', margin: '6px 0' }}>
-            {item.description.slice(0, 80)}
-            {item.description.length > 80 ? '…' : ''}
-          </div>
-          <div
-            style={{
-              height: 120,
-              borderRadius: 12,
-              backgroundImage: `url(${
-                item.imageUrl && item.imageUrl.startsWith('http')
-                  ? item.imageUrl
-                  : imageMap[item.name] ?? '/placeholder.png'
-              }), linear-gradient(135deg, #f0f0f0, #e0e0e0)`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              marginBottom: 10
-            }}
-          />
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span>{formatINR(item.price)}</span>
-            <span>{item.prepMinutes} min</span>
-          </div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
-            {item.dietary.map((d) => (
-              <span
-                key={d}
-                style={{
-                  border: '1px solid var(--border)',
-                  padding: '4px 8px',
-                  borderRadius: 12,
-                  fontSize: 12
-                }}
-              >
-                {d}
-              </span>
-            ))}
-          </div>
-          <button
-            disabled={!item.available || item.stock <= 0}
-            onClick={() =>
-              add({
-                menuItem: item,
-                quantity: 1,
-                addOnIds: [],
-                specialInstructions: ''
-              })
-            }
-            className={clsx('glass')}
+  const renderCard = (item: MenuItem) => (
+    <div key={item.id} className="glass" style={{ padding: 16 }}>
+      <div
+        style={{ fontWeight: 700, fontSize: 18, cursor: 'pointer' }}
+        onClick={() => setSelected(item)}
+      >
+        {item.name}
+      </div>
+      <div style={{ color: 'var(--muted)', margin: '6px 0' }}>
+        {item.description.slice(0, 80)}
+        {item.description.length > 80 ? '…' : ''}
+      </div>
+      <img
+        src={
+          item.imageUrl && item.imageUrl.startsWith('http')
+            ? item.imageUrl
+            : imageMap[item.name] ?? '/placeholder.png'
+        }
+        alt={item.name}
+        loading="lazy"
+        style={{
+          height: 120,
+          width: '100%',
+          objectFit: 'cover',
+          borderRadius: 12,
+          marginBottom: 10,
+          background: 'linear-gradient(135deg, #f0f0f0, #e0e0e0)'
+        }}
+      />
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+        <span>{formatINR(item.price)}</span>
+        <span>{item.prepMinutes} min</span>
+      </div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+        {item.dietary.map((d) => (
+          <span
+            key={d}
             style={{
               border: '1px solid var(--border)',
-              padding: '10px 12px',
-              width: '100%',
-              background: 'linear-gradient(90deg, #f4b400, #ffcf66)',
-              color: '#0b0c10',
-              fontWeight: 700
+              padding: '4px 8px',
+              borderRadius: 12,
+              fontSize: 12
             }}
           >
-            {item.available ? 'Add to cart' : 'Unavailable'}
-          </button>
+            {d}
+          </span>
+        ))}
+      </div>
+      <button
+        disabled={!item.available || item.stock <= 0}
+        onClick={() =>
+          add({
+            menuItem: item,
+            quantity: 1,
+            addOnIds: [],
+            specialInstructions: ''
+          })
+        }
+        className={clsx('glass')}
+        style={{
+          border: '1px solid var(--border)',
+          padding: '10px 12px',
+          width: '100%',
+          background: 'linear-gradient(90deg, #f4b400, #ffcf66)',
+          color: '#0b0c10',
+          fontWeight: 700
+        }}
+      >
+        {item.available ? 'Add to cart' : 'Unavailable'}
+      </button>
+    </div>
+  );
+
+  return (
+    <>
+      <div
+        ref={scrollParentRef}
+        style={{
+          height: '75vh',
+          overflow: 'auto',
+          marginTop: 16,
+          position: 'relative'
+        }}
+      >
+        <div
+          style={{
+            height: rowVirtualizer.getTotalSize(),
+            position: 'relative'
+          }}
+        >
+          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+            const startIndex = virtualRow.index * columns;
+            const rowItems = items.slice(startIndex, startIndex + columns);
+            return (
+              <div
+                key={virtualRow.key}
+                style={{
+                  position: 'absolute',
+                  top: virtualRow.start,
+                  left: 0,
+                  width: '100%',
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${columns}, minmax(240px, 1fr))`,
+                  gap: 16,
+                  paddingRight: 8
+                }}
+              >
+                {rowItems.map(renderCard)}
+              </div>
+            );
+          })}
+          {!items.length && (
+            <div style={{ padding: 16, color: 'var(--muted)' }}>No items found.</div>
+          )}
         </div>
-      ))}
+      </div>
+
       {selected && (
         <div
           style={{
@@ -152,6 +214,7 @@ export const MenuGrid: React.FC<Props> = ({ items }) => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ margin: 0 }}>{selected.name}</h3>
               <button
+                aria-label="Close item modal"
                 onClick={() => {
                   setSelected(null);
                   resetSelections();
@@ -247,6 +310,6 @@ export const MenuGrid: React.FC<Props> = ({ items }) => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };

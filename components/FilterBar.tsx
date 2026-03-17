@@ -10,6 +10,7 @@ interface Props {
   minPrice: number;
   maxPrice: number;
   onPrice: (min: number, max: number) => void;
+  searchAria?: string;
 }
 
 const categories = ['Appetizers', 'Main Course', 'Desserts', 'Beverages'];
@@ -24,19 +25,21 @@ export const FilterBar: React.FC<Props> = ({
   onDietary,
   minPrice,
   maxPrice,
-  onPrice
+  onPrice,
+  searchAria
 }) => {
   return (
     <div className="glass" style={{ padding: 16, display: 'grid', gap: 12 }}>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
         <input
+          aria-label={searchAria ?? 'Search'}
           placeholder="Search"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
           style={{ flex: 1, padding: 10, borderRadius: 12, border: '1px solid var(--border)' }}
         />
         <div className="select-wrap">
-          <select value={category} onChange={(e) => onCategory(e.target.value)}>
+          <select aria-label="Filter by category" value={category} onChange={(e) => onCategory(e.target.value)}>
             <option value="">All categories</option>
             {categories.map((c) => (
               <option key={c} value={c}>
@@ -47,7 +50,7 @@ export const FilterBar: React.FC<Props> = ({
           <span className="chevron">▾</span>
         </div>
         <div className="select-wrap">
-          <select value={dietary} onChange={(e) => onDietary(e.target.value)}>
+          <select aria-label="Filter by dietary preference" value={dietary} onChange={(e) => onDietary(e.target.value)}>
             <option value="">Any diet</option>
             {diets.map((d) => (
               <option key={d} value={d}>
@@ -64,6 +67,8 @@ export const FilterBar: React.FC<Props> = ({
           <button
             key={c}
             onClick={() => onCategory(category === c ? '' : c)}
+            aria-pressed={category === c}
+            aria-label={`Filter by ${c}`}
             style={{
               border: '1px solid var(--border)',
               padding: '6px 10px',
@@ -79,6 +84,8 @@ export const FilterBar: React.FC<Props> = ({
           <button
             key={d}
             onClick={() => onDietary(dietary === d ? '' : d)}
+            aria-pressed={dietary === d}
+            aria-label={`Filter by ${d}`}
             style={{
               border: '1px solid var(--border)',
               padding: '6px 10px',
@@ -97,6 +104,7 @@ export const FilterBar: React.FC<Props> = ({
           type="number"
           min={0}
           value={minPrice}
+          aria-label="Minimum price"
           onChange={(e) => onPrice(Number(e.target.value || 0), maxPrice)}
           style={{ width: 90, padding: 8 }}
         />
@@ -105,6 +113,7 @@ export const FilterBar: React.FC<Props> = ({
           type="number"
           min={0}
           value={maxPrice}
+          aria-label="Maximum price"
           onChange={(e) => onPrice(minPrice, Number(e.target.value || 0))}
           style={{ width: 90, padding: 8 }}
         />
@@ -113,6 +122,7 @@ export const FilterBar: React.FC<Props> = ({
           min={0}
           max={50}
           value={maxPrice || 50}
+          aria-label="Price slider"
           onChange={(e) => onPrice(minPrice, Number(e.target.value))}
           style={{ flex: 1 }}
         />

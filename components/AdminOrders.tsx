@@ -50,7 +50,7 @@ export const AdminOrders: React.FC = () => {
   const advance = async (order: Order) => {
     const next = nextStatus[order.status];
     if (!next) return;
-    await updateStatus(order.id, next);
+    await updateStatus(order.id, next, order.version);
     await queryClient.invalidateQueries({ queryKey: ['orders'] });
   };
 

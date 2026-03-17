@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Providers } from '../providers';
 import { AdminOrders } from '../../components/AdminOrders';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -11,37 +11,39 @@ export default function AdminPage() {
   const params = useSearchParams();
   const router = useRouter();
   const tokenFromUrl = params.get('token');
-  const required = process.env.NEXT_PUBLIC_ADMIN_TOKEN;
-  const [token, setToken] = React.useState<string>(
-    () => (typeof window !== 'undefined' && localStorage.getItem('adminToken')) || tokenFromUrl || ''
-  );
-  const [error, setError] = React.useState<string>('');
-  React.useEffect(() => {
+  const [mounted, setMounted] = useState(false);
+  const [authToken, setAuthToken] = useState<string>(() => {
+    if (typeof window === 'undefined') return '';
+    return localStorage.getItem('adminToken') || '';
+  });
+  const [inputToken, setInputToken] = useState<string>('');
+  const [error, setError] = useState<string>('');
+
+  useEffect(() => setMounted(true), []);
+
+  // Apply token from URL once, then clean URL
+  useEffect(() => {
     if (tokenFromUrl) {
-      if (required && tokenFromUrl !== required) {
-        setError('Invalid token');
-        localStorage.removeItem('adminToken');
-        api.defaults.headers.common['x-admin-token'] = '';
-      } else {
-        localStorage.setItem('adminToken', tokenFromUrl);
-        api.defaults.headers.common['x-admin-token'] = tokenFromUrl;
-        setToken(tokenFromUrl);
-      }
+      localStorage.setItem('adminToken', tokenFromUrl);
+      api.defaults.headers.common['authorization'] = `Bearer ${tokenFromUrl}`;
+      setAuthToken(tokenFromUrl);
       router.replace('/admin');
     }
-  }, [tokenFromUrl, router, required]);
+  }, [tokenFromUrl, router]);
 
-  React.useEffect(() => {
-    if (required && token === required) {
-      api.defaults.headers.common['x-admin-token'] = token;
-      setError('');
+  // On mount, set axios header if token exists
+  useEffect(() => {
+    if (authToken) {
+      api.defaults.headers.common['authorization'] = `Bearer ${authToken}`;
     } else {
-      api.defaults.headers.common['x-admin-token'] = '';
-      localStorage.removeItem('adminToken');
+      delete api.defaults.headers.common['authorization'];
     }
-  }, [token, required]);
+  }, [authToken]);
 
-  if (required && token !== required) {
+  if (!mounted) return null;
+
+  // If no token, show login form
+  if (!authToken) {
     return (
       <div style={{ maxWidth: 420, margin: '80px auto' }}>
         <h2>Admin access</h2>
@@ -49,26 +51,27 @@ export default function AdminPage() {
         {error && <div style={{ color: '#ff6b6b', marginBottom: 8 }}>{error}</div>}
         <input
           type="password"
-          value={token}
-          onChange={(e) => setToken(e.target.value)}
+          value={inputToken}
+          onChange={(e) => setInputToken(e.target.value)}
           style={{ width: '100%', padding: 10, marginBottom: 12 }}
         />
         <button
           onClick={async () => {
             try {
-              const res = await axios.post(
-                `${process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:4000/api'}/auth/login`,
-                { password: token }
-              );
+              const res = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:4000/api'}/auth/login`, {
+                password: inputToken
+              });
               const jwt = res.data.token;
               localStorage.setItem('adminToken', jwt);
               api.defaults.headers.common['authorization'] = `Bearer ${jwt}`;
               setError('');
+              setAuthToken(jwt);
+              setInputToken('');
               router.refresh();
             } catch (e: any) {
               setError(e?.response?.data?.message ?? 'Invalid token');
               localStorage.removeItem('adminToken');
-              api.defaults.headers.common['authorization'] = '';
+              delete api.defaults.headers.common['authorization'];
             }
           }}
           style={{
@@ -89,6 +92,26 @@ export default function AdminPage() {
 
   return (
     <Providers>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', margin: '12px 0' }}>
+        <button
+          onClick={() => {
+            localStorage.removeItem('adminToken');
+            delete api.defaults.headers.common['authorization'];
+            setAuthToken('');
+            router.refresh();
+          }}
+          style={{
+            padding: '8px 12px',
+            borderRadius: 8,
+            border: '1px solid rgba(255,255,255,0.25)',
+            background: 'linear-gradient(90deg, #222734, #2f3648)',
+            color: '#f7f9fc',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.25)'
+          }}
+        >
+          Log out
+        </button>
+      </div>
       <AdminOrders />
     </Providers>
   );

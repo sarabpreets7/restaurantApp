@@ -24,5 +24,5 @@ export const fetchOrder = async (id: string) => (await api.get<Order>(`/orders/$
 
 export const fetchOrders = async () => (await api.get<Order[]>('/orders')).data;
 
-export const updateStatus = async (id: string, status: OrderStatus) =>
-  (await api.patch<Order>(`/orders/${id}/status`, { status })).data;
+export const updateStatus = async (id: string, status: OrderStatus, version?: number) =>
+  (await api.patch<Order>(`/orders/${id}/status`, { status, version })).data;

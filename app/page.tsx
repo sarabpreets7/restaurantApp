@@ -20,7 +20,7 @@ const CustomerPage = () => {
 
   const debouncedSearch = useDebounce(search, 250);
 
-  const { data: menu } = useQuery({
+  const { data: menu, isError, isLoading, refetch } = useQuery({
     queryKey: ['menu', { search: debouncedSearch, category, dietary, minPrice, maxPrice }],
     queryFn: () => fetchMenu({ search: debouncedSearch, category, dietary, minPrice, maxPrice })
   });
@@ -45,6 +45,7 @@ const CustomerPage = () => {
         Browse the menu, customize, and track your order live.
       </p>
       <FilterBar
+        searchAria="Search menu"
         search={search}
         onSearch={setSearch}
         category={category}
@@ -58,7 +59,18 @@ const CustomerPage = () => {
           setMaxPrice(max);
         }}
       />
-      {menu ? <MenuGrid items={filtered} /> : <div>Loading menu...</div>}
+      {isError ? (
+        <div style={{ marginTop: 12 }}>
+          Failed to load menu.
+          <button style={{ marginLeft: 8 }} onClick={() => refetch()}>
+            Retry
+          </button>
+        </div>
+      ) : isLoading || !menu ? (
+        <div>Loading menu...</div>
+      ) : (
+        <MenuGrid items={filtered} />
+      )}
       <CartFab />
     </>
   );

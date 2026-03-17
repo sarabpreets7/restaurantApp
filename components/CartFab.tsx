@@ -19,6 +19,7 @@ export const CartFab: React.FC = () => {
   return (
     <button
       onClick={() => router.push('/cart')}
+      aria-label="Open cart"
       style={{
         position: 'fixed',
         bottom: 24,

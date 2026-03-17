@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useCart } from '../../state/cart';
 import { createOrder } from '../../lib/api';
 import { useRouter } from 'next/navigation';
@@ -12,12 +12,21 @@ const CartPageInner: React.FC = () => {
   const { lines, updateQuantity, remove, clear, total } = useCart();
   const expired = useCart((s) => s.expired);
   const resetExpiry = useCart((s) => s.resetExpiry);
+  const [mounted, setMounted] = useState(false);
   const [customer, setCustomer] = useState({ name: '', phone: '', table: '' });
   const [paymentMode, setPaymentMode] = useState<'normal' | 'force-success' | 'force-fail'>(
     'normal'
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
 
   const placeOrder = async () => {
     setBusy(true);
@@ -92,11 +101,12 @@ const CartPageInner: React.FC = () => {
             ) : null}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <button
-              onClick={() => updateQuantity(line.menuItem.id, Math.max(1, line.quantity - 1))}
-              style={{
-                width: 32,
-                height: 32,
+        <button
+          onClick={() => updateQuantity(line.menuItem.id, Math.max(1, line.quantity - 1))}
+          aria-label={`Decrease quantity of ${line.menuItem.name}`}
+          style={{
+            width: 32,
+            height: 32,
                 borderRadius: 10,
                 border: '1px solid var(--border)',
                 background: 'var(--card)',
@@ -107,11 +117,12 @@ const CartPageInner: React.FC = () => {
               −
             </button>
             <span style={{ minWidth: 20, textAlign: 'center', fontWeight: 700 }}>{line.quantity}</span>
-            <button
-              onClick={() => updateQuantity(line.menuItem.id, line.quantity + 1)}
-              style={{
-                width: 32,
-                height: 32,
+        <button
+          onClick={() => updateQuantity(line.menuItem.id, line.quantity + 1)}
+          aria-label={`Increase quantity of ${line.menuItem.name}`}
+          style={{
+            width: 32,
+            height: 32,
                 borderRadius: 10,
                 border: '1px solid var(--border)',
                 background: 'var(--card)',
