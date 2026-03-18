@@ -9,28 +9,20 @@ Full-stack take-home built with Next.js (customer + admin) and a Nest-style Node
 ## Running locally
 1) Install deps
 ```bash
-cd backend && npm install
-cd ../frontend && npm install
+npm install
 ```
-2) Start backend
-```bash
-cd backend
-npm run seed # optional: loads menu with images
-npm run dev  # listens on 4300 by default
-```
+2) Ensure backend API is running (default http://localhost:4300/api). Set `NEXT_PUBLIC_API_BASE` accordingly in `.env.local`.
 3) Start frontend
 ```bash
-cd frontend
 npm run dev # opens http://localhost:3000
 ```
-Environment variables are documented in `backend/.env.example` and `frontend/.env.example`. In-memory data resets on restart; swap in a real database by replacing the menu and order services.
+Environment variables are documented in `frontend/.env.example`.
 
 Admin auth: backend expects `ADMIN_TOKEN` in `backend/.env`; login at `/admin` with that token, which returns a JWT stored in `localStorage`. Customer tokens are auto-issued from `/auth/customer` and stored separately.
 
 ### Run tests
 ```bash
-cd backend && npm test   # ts-jest will warn about isolatedModules; add isolatedModules:true in tsconfig to silence
-cd ../frontend && npm test
+npm test
 ```
 
 ## Architecture / API / Data
@@ -59,8 +51,3 @@ cd ../frontend && npm test
 - **Backend**: layered modules (controllers → service → in-memory repo). Socket.IO gateway broadcasts `order.updated` to per-order rooms and `admin.orders` to the kitchen dashboard. Payment is mocked with a `force-fail` toggle to simulate declines without external gateways.
 - **Frontend**: app router pages (`/` customer, `/track/[orderId]`, `/admin`). Shared API client + websocket helper. Cart totals recompute with add-ons. Minimal styling via glassmorphism theme to keep UI legible.
 
-## Next steps if you continue
-- Persist data (PostgreSQL + Prisma) and move stock handling to transactions.
-- Add auth (NextAuth for admin) and role-based access to status updates.
-- Add E2E tests (Playwright) and contract tests between FE/BE.
-- Enhance price drift handling by sending client-captured prices and reconciling on checkout.

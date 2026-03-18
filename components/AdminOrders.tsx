@@ -77,7 +77,10 @@ export const AdminOrders: React.FC = () => {
         {data.map((order) => (
           <div key={order.id} style={{ border: '1px solid var(--border)', padding: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <strong>#{order.id.slice(0, 6)}</strong>
+              <div>
+                <strong>{order.id}</strong>
+                <div style={{ color: 'var(--muted)', fontSize: 12 }}>Short: #{order.id.slice(0, 6)}</div>
+              </div>
               <span>{order.status.toUpperCase()}</span>
             </div>
             <div style={{ color: 'var(--muted)', marginTop: 4 }}>

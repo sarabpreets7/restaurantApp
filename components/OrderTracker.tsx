@@ -7,19 +7,26 @@ const steps: Order['status'][] = ['received', 'preparing', 'ready', 'completed']
 
 export const OrderTracker: React.FC<{ orderId: string }> = ({ orderId }) => {
   const [order, setOrder] = useState<Order | null>(null);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
-    fetchOrder(orderId).then(setOrder);
+    fetchOrder(orderId)
+      .then(setOrder)
+      .catch((e) => {
+        setError('Order not found or no longer available');
+      });
     const socket = connectOrderSocket(orderId);
     socket.on('order.updated', (o: Order) => setOrder(o));
     return () => socket.disconnect();
   }, [orderId]);
 
+  if (error) return <div className="glass" style={{ padding: 16 }}>{error}</div>;
   if (!order) return <div>Loading order...</div>;
 
   return (
     <div className="glass" style={{ padding: 16 }}>
-      <h2 style={{ marginTop: 0 }}>Order #{order.id.slice(0, 6)}</h2>
+      <h2 style={{ marginTop: 0, marginBottom: 4 }}>Order {order.id}</h2>
+      <div style={{ color: 'var(--muted)', marginBottom: 12 }}>Short ID: #{order.id.slice(0, 6)}</div>
       <div style={{ display: 'flex', gap: 12 }}>
         {steps.map((s) => (
           <div
